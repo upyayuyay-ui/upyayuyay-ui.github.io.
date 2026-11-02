@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CampusLife 6.0</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#4F46E5">
+    <meta name="description" content="CampusLife — pendamping aktivitas kuliah, jadwal, tugas, fokus, dan akademik.">
+    <meta name="application-name" content="CampusLife">
+    <link rel="apple-touch-icon" href="./icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4F46E5; --primary-light: #EEF2FF; --primary-dark: #3730A3;
+            --bg-body: #f3f4f6; --bg-app: #ffffff;
+            --text-main: #111827; --text-muted: #6B7280;
+            --card-bg: #F9FAFB; --border: #E5E7EB;
+            --danger: #EF4444; --danger-light: #FEF2F2;
+            --success: #10B981; --warning: #F59E0B;
+        }
+
+        [data-color="emerald"] { --primary: #10B981; --primary-light: #D1FAE5; --primary-dark: #047857; }
+        [data-color="rose"] { --primary: #F43F5E; --primary-light: #FFE4E6; --primary-dark: #BE123C; }
+        [data-color="amber"] { --primary: #F59E0B; --primary-light: #FEF3C7; --primary-dark: #B45309; }
+
+        [data-theme="dark"] {
+            --bg-body: #111827; --bg-app: #1F2937;
+            --text-main: #F9FAFB; --text-muted: #9CA3AF;
+            --card-bg: #374151; --border: #4B5563;
+        }
+        [data-theme="dark"][data-color="indigo"], [data-theme="dark"]:not([data-color]) { --primary: #6366F1; --primary-light: #3730A3; }
+        [data-theme="dark"][data-color="emerald"] { --primary: #34D399; --primary-light: #065F46; }
+        [data-theme="dark"][data-color="rose"] { --primary: #FB7185; --primary-light: #881337; }
+        [data-theme="dark"][data-color="amber"] { --primary: #FBBF24; --primary-light: #78350F; }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg-body); display: flex; justify-content: center; min-height: 100vh; color: var(--text-main); transition: background 0.3s; }
+        
+        .app-container { width: 100%; max-width: 480px; height: 100vh; background: var(--bg-app); display: flex; flex-direction: column; position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+
+        header { padding: 20px 20px 10px 20px; display: flex; justify-content: space-between; align-items: center; background: var(--bg-app); z-index: 10; }
+        .header-title { font-size: 1.5rem; font-weight: 700; }
+        .header-actions { display: flex; align-items: center; gap: 12px; }
+        .theme-btn { background: var(--card-bg); border: 1px solid var(--border); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); font-size: 1.1rem; }
+        .profile-avatar-btn { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; cursor: pointer; transition: transform 0.2s; background: var(--card-bg); }
+        .profile-avatar-btn:active { transform: scale(0.9); }
+
+        .content { flex: 1; overflow-y: auto; padding: 10px 20px 100px 20px; scrollbar-width: none; }
+        .content::-webkit-scrollbar { display: none; }
+        
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .summary-card { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: 20px; padding: 20px; color: white; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transition: background 0.3s; }
+        .summary-card h2 { font-size: 1.2rem; font-weight: 600; margin-bottom: 5px; }
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; transition: transform 0.2s; }
+        .card:active { transform: scale(0.98); }
+        .card-content h4 { font-size: 1.05rem; margin-bottom: 4px; font-weight: 600; }
+        .card-content p { font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+        
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+        .badge-urgent { background: var(--danger-light); color: var(--danger); }
+        .badge-normal { background: var(--primary-light); color: var(--primary); }
+        .btn-icon { background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer; padding: 8px; }
+        .btn-check { color: var(--border); font-size: 1.5rem; margin-right: 15px; }
+        .task-done .btn-check { color: var(--success); }
+        .task-done .card-content h4 { text-decoration: line-through; color: var(--text-muted); }
+
+        .profile-header { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 25px; padding-top: 10px; }
+        .profile-img-container { position: relative; display: inline-block; margin-bottom: 15px; }
+        .profile-img-large { width: 100px; height: 100px; border-radius: 50%; border: 4px solid var(--primary); object-fit: cover; background: var(--card-bg); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        .btn-upload-foto { position: absolute; bottom: 0; right: 0; background: var(--primary); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid var(--bg-app); cursor: pointer; font-size: 0.85rem; }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .stat-box { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 16px; text-align: center; }
+        .stat-box h3 { font-size: 1.5rem; color: var(--primary); margin-bottom: 5px; }
+        .stat-box p { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+
+        .color-selector { display: flex; gap: 15px; justify-content: center; margin-top: 10px; margin-bottom: 20px; }
+        .color-btn { width: 36px; height: 36px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; transition: transform 0.2s; }
+        .color-btn.active { border-color: var(--text-main); transform: scale(1.1); }
+        .c-indigo { background: #4F46E5; } .c-emerald { background: #10B981; } .c-rose { background: #F43F5E; } .c-amber { background: #F59E0B; }
+
+        .timer-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 20px; }
+        .timer-svg { width: 250px; height: 250px; transform: rotate(-90deg); }
+        .timer-circle-bg { fill: none; stroke: var(--card-bg); stroke-width: 8; }
+        .timer-circle-progress { fill: none; stroke: var(--primary); stroke-width: 8; stroke-linecap: round; stroke-dasharray: 283; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear, stroke 0.3s; }
+        .timer-text { position: absolute; font-size: 3rem; font-weight: 700; color: var(--text-main); top: 50%; left: 50%; transform: translate(-50%, -50%); margin-top: -30px; }
+        .timer-controls { display: flex; gap: 15px; margin-top: 30px; }
+        .btn-timer { padding: 14px 35px; border-radius: 30px; font-weight: 600; border: none; cursor: pointer; font-size: 1rem; }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.15); transition: background 0.3s; }
+        .btn-secondary { background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); }
+
+        .bottom-nav { position: absolute; bottom: 0; width: 100%; background: var(--bg-app); border-top: 1px solid var(--border); display: flex; justify-content: space-between; padding: 10px 20px 20px 20px; z-index: 10; border-radius: 24px 24px 0 0; }
+        .nav-item { background: none; border: none; color: var(--text-muted); font-size: 0.75rem; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; flex: 1; font-weight: 500; }
+        .nav-item i { font-size: 1.3rem; transition: transform 0.2s; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item.active i { transform: translateY(-3px); }
+        .fab { position: absolute; bottom: 90px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; border: none; box-shadow: 0 8px 20px rgba(0,0,0,0.2); cursor: pointer; z-index: 9; transition: background 0.3s; }
+        .fab.hidden { display: none; }
+        
+        .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(3px); }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        .bottom-sheet { position: absolute; bottom: -100%; left: 0; width: 100%; background: var(--bg-app); border-radius: 24px 24px 0 0; padding: 24px; z-index: 21; transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .bottom-sheet.active { bottom: 0; }
+        .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn-close { background: var(--card-bg); border: none; width: 32px; height: 32px; border-radius: 50%; color: var(--text-main); cursor: pointer; }
+
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--text-muted); }
+        input, select { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-body); color: var(--text-main); font-size: 1rem; outline: none; transition: border 0.2s; }
+        input:focus, select:focus { border-color: var(--primary); }
+        .btn-block { width: 100%; padding: 14px; border-radius: 12px; background: var(--primary); color: white; font-weight: 600; border: none; font-size: 1rem; cursor: pointer; margin-top: 10px; transition: background 0.3s; }
+        
+        .ipk-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; }
+        .ipk-table th, .ipk-table td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
+        .ipk-result { background: var(--primary-light); color: var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-top: 20px; font-weight: 700; font-size: 1.2rem; }
+    </style>
+</head>
+<body onclick="unlockAudio()">
+
+<div class="app-container">
+    <header>
+        <div class="header-title" id="header-title">Beranda</div>
+        <div class="header-actions">
+            <button class="theme-btn" onclick="toggleTheme()"><i class="fas fa-moon" id="theme-icon"></i></button>
+            <img src="" id="header-avatar" class="profile-avatar-btn" onclick="openProfil()" alt="Profil">
+        </div>
+    </header>
+
+    <div class="content">
+        <!-- BERANDA -->
+        <div id="tab-beranda" class="tab-content active">
+            <div class="summary-card">
+                <h2 id="greeting">Halo, Mahasiswa!</h2>
+                <p id="date-display">Senin, 2 Nov 2026</p>
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
+                    <p><i class="fas fa-tasks"></i> <span id="pending-tasks">0</span> Tugas belum selesai</p>
+                    <p style="margin-top: 5px;"><i class="fas fa-calendar-day"></i> <span id="today-classes">0</span> Kelas hari ini</p>
+                </div>
+            </div>
+            <h3 style="font-size: 1.1rem; margin: 20px 0 10px 0;">Tugas Terdekat</h3>
+            <div id="recent-tasks"></div>
+        </div>
+
+        <!-- JADWAL -->
+        <div id="tab-jadwal" class="tab-content">
+            <div id="list-jadwal"></div>
+            <div id="empty-jadwal" style="text-align: center; color: var(--text-muted); margin-top: 40px; display: none;">
+                <i class="fas fa-calendar-times" style="font-size: 3rem; margin-bottom: 10px;"></i>
+                <p>Belum ada jadwal kuliah.</p>
+            </div>
+        </div>
+
+        <!-- TUGAS -->
+        <div id="tab-tugas" class="tab-content">
+            <div id="list-tugas"></div>
+            <div id="empty-tugas" style="text-align: center; color: var(--text-muted); margin-top: 40px; display: none;">
+                <i class="fas fa-clipboard-check" style="font-size: 3rem; margin-bottom: 10px;"></i>
+                <p>Semua tugas sudah selesai!</p>
+            </div>
+        </div>
+
+        <!-- FOKUS -->
+        <div id="tab-fokus" class="tab-content">
+            <div class="input-group">
+                <select id="timer-mode" onchange="changeTimerMode()">
+                    <option value="25">Fokus Belajar (25 Menit)</option>
+                    <option value="5">Istirahat Pendek (5 Menit)</option>
+                </select>
+            </div>
+            <div class="timer-wrapper">
+                <div style="position: relative;">
+                    <svg class="timer-svg" viewBox="0 0 100 100">
+                        <circle class="timer-circle-bg" cx="50" cy="50" r="45"></circle>
+                        <circle class="timer-circle-progress" id="timer-progress" cx="50" cy="50" r="45"></circle>
+                    </svg>
+                    <div class="timer-text" id="timer-display">25:00</div>
+                </div>
+                <div class="timer-controls">
+                    <button class="btn-timer btn-primary" id="btn-timer-toggle" onclick="toggleTimer()">Mulai</button>
+                    <button class="btn-timer btn-secondary" onclick="resetTimer()">Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- AKADEMIK -->
+        <div id="tab-akademik" class="tab-content">
+            <div class="card">
+                <div style="width: 100%;">
+                    <h4 style="margin-bottom: 10px;">Hitung IPK Semester</h4>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <input type="text" id="ipk-mk" placeholder="Mata Kuliah" style="flex: 2;">
+                        <input type="number" id="ipk-sks" placeholder="SKS" style="flex: 1;">
+                        <select id="ipk-nilai" style="flex: 1;">
+                            <option value="4">A</option><option value="3.5">B+</option><option value="3">B</option>
+                            <option value="2.5">C+</option><option value="2">C</option><option value="1">D</option><option value="0">E</option>
+                        </select>
+                    </div>
+                    <button class="btn-block" style="padding: 10px;" onclick="tambahNilai()">Tambah Nilai</button>
+                </div>
+            </div>
+            <table class="ipk-table" id="table-ipk">
+                <thead><tr><th>Mata Kuliah</th><th>SKS</th><th>Nilai</th><th>Aksi</th></tr></thead>
+                <tbody id="list-nilai"></tbody>
+            </table>
+            <div class="ipk-result" id="ipk-result">IPK: 0.00</div>
+        </div>
+
+        <!-- PROFIL -->
+        <div id="tab-profil" class="tab-content">
+            <div class="profile-header">
+                <div class="profile-img-container">
+                    <img src="" id="profile-img-large" class="profile-img-large" alt="Profil">
+                    <label for="upload-avatar" class="btn-upload-foto"><i class="fas fa-camera"></i></label>
+                    <input type="file" id="upload-avatar" accept="image/*" style="display: none;" onchange="gantiFotoProfil(event)">
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.85rem;">Ketuk ikon kamera untuk ubah foto</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-box"><h3 id="stat-tugas">0</h3><p>Tugas Selesai</p></div>
+                <div class="stat-box"><h3 id="stat-ipk">0.00</h3><p>IPK Saat Ini</p></div>
+            </div>
+
+            <div class="card" style="flex-direction: column; align-items: stretch; padding: 20px;">
+                <h4 style="margin-bottom: 5px;">Warna Tema Aplikasi</h4>
+                <div class="color-selector">
+                    <button class="color-btn c-indigo active" onclick="setTemaWarna('indigo')" id="btn-col-indigo"></button>
+                    <button class="color-btn c-emerald" onclick="setTemaWarna('emerald')" id="btn-col-emerald"></button>
+                    <button class="color-btn c-rose" onclick="setTemaWarna('rose')" id="btn-col-rose"></button>
+                    <button class="color-btn c-amber" onclick="setTemaWarna('amber')" id="btn-col-amber"></button>
+                </div>
+                
+                <h4 style="margin-bottom: 15px; margin-top: 10px;">Informasi Pribadi</h4>
+                <div class="input-group"><label>Nama Panggilan</label><input type="text" id="p-nama"></div>
+                <div class="input-group"><label>Fokus Studi / Jurusan</label><input type="text" id="p-jurusan"></div>
+                <div class="input-group"><label>Lokasi Saat Ini</label><input type="text" id="p-lokasi"></div>
+                <button class="btn-block" onclick="simpanProfil()">Simpan Profil</button>
+            </div>
+            <button class="btn-block" style="background: var(--danger-light); color: var(--danger);" onclick="resetSemuaData()">Hapus Semua Data Aplikasi</button>
+        </div>
+    </div>
+
+    <!-- FAB -->
+    <button class="fab" id="main-fab" onclick="openFabMenu()"><i class="fas fa-plus"></i></button>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" onclick="switchTab('beranda', 'Beranda', this)"><i class="fas fa-home"></i>Beranda</button>
+        <button class="nav-item" onclick="switchTab('jadwal', 'Jadwal Kuliah', this)"><i class="fas fa-calendar-alt"></i>Jadwal</button>
+        <button class="nav-item" onclick="switchTab('tugas', 'Daftar Tugas', this)"><i class="fas fa-tasks"></i>Tugas</button>
+        <button class="nav-item" onclick="switchTab('fokus', 'Pomodoro Timer', this)"><i class="fas fa-stopwatch"></i>Fokus</button>
+        <button class="nav-item" onclick="switchTab('akademik', 'Akademik', this)"><i class="fas fa-graduation-cap"></i>IPK</button>
+    </nav>
+
+    <!-- Modals -->
+    <div class="modal-overlay" id="modal-overlay" onclick="closeModals()"></div>
+
+    <!-- Form Tugas dengan Alarm -->
+    <div class="bottom-sheet" id="sheet-tugas">
+        <div class="sheet-header"><h3>Tambah Tugas Baru</h3><button class="btn-close" onclick="closeModals()"><i class="fas fa-times"></i></button></div>
+        <div class="input-group"><label>Nama Tugas</label><input type="text" id="t-nama" placeholder="Contoh: Laporan ELDIG"></div>
+        <div class="input-group"><label>Tenggat Waktu (Tanggal & Jam)</label><input type="datetime-local" id="t-deadline"></div>
+        
+        <div style="display: flex; gap: 10px;">
+            <div class="input-group" style="flex: 1;"><label>Prioritas</label>
+                <select id="t-prioritas"><option value="normal">Biasa</option><option value="urgent">Mendesak</option></select>
+            </div>
+            <div class="input-group" style="flex: 1;"><label>Alarm Pengingat</label>
+                <select id="t-reminder">
+                    <option value="0">Tepat Waktu</option>
+                    <option value="15">15 Menit Sebelum</option>
+                    <option value="60">1 Jam Sebelum</option>
+                    <option value="1440">1 Hari Sebelum</option>
+                </select>
+            </div>
+        </div>
+        <button class="btn-block" onclick="simpanTugas()">Simpan Tugas</button>
+    </div>
+
+    <div class="bottom-sheet" id="sheet-jadwal">
+        <div class="sheet-header"><h3>Tambah Jadwal Kuliah</h3><button class="btn-close" onclick="closeModals()"><i class="fas fa-times"></i></button></div>
+        <div class="input-group"><label>Mata Kuliah</label><input type="text" id="j-matkul"></div>
+        <div class="input-group"><label>Hari</label><select id="j-hari"><option value="Senin">Senin</option><option value="Selasa">Selasa</option><option value="Rabu">Rabu</option><option value="Kamis">Kamis</option><option value="Jumat">Jumat</option><option value="Sabtu">Sabtu</option></select></div>
+        <div class="input-group"><label>Waktu</label><input type="time" id="j-waktu"></div>
+        <button class="btn-block" onclick="simpanJadwal()">Simpan Jadwal</button>
+    </div>
+</div>
+
+<script>
+    // --- MINTA IZIN NOTIFIKASI & AUDIO UNLOCK ---
+    let audioUnlocked = false;
+    const alarmSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    
+    function unlockAudio() {
+        if(!audioUnlocked) {
+            alarmSound.play().then(() => { alarmSound.pause(); alarmSound.currentTime = 0; }).catch(() => {});
+            audioUnlocked = true;
+        }
+    }
+    
+    // Izin notifikasi diminta saat pengguna menyimpan tugas, bukan otomatis saat membuka aplikasi.
+
+    // --- TEMA GELAP/TERANG ---
+    let isDark = localStorage.getItem('theme') === 'dark';
+    if(isDark) document.body.setAttribute('data-theme', 'dark');
+    document.getElementById('theme-icon').className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+
+    function toggleTheme() {
+        isDark = !isDark;
+        if(isDark) { document.body.setAttribute('data-theme', 'dark'); localStorage.setItem('theme', 'dark'); }
+        else { document.body.removeAttribute('data-theme'); localStorage.setItem('theme', 'light'); }
+        document.getElementById('theme-icon').className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+    }
+
+    // --- TEMA WARNA ---
+    let currentColor = localStorage.getItem('cl_color') || 'indigo';
+    setTemaWarna(currentColor);
+    function setTemaWarna(color) {
+        currentColor = color; document.body.setAttribute('data-color', color); localStorage.setItem('cl_color', color);
+        document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+        const activeBtn = document.getElementById('btn-col-' + color); if(activeBtn) activeBtn.classList.add('active');
+    }
+
+    // --- DATA STATE ---
+    let jadwalData = JSON.parse(localStorage.getItem('cl_jadwal')) || [];
+    let tugasData = JSON.parse(localStorage.getItem('cl_tugas')) || [];
+    let nilaiData = JSON.parse(localStorage.getItem('cl_nilai')) || [];
+    let profilData = JSON.parse(localStorage.getItem('cl_profil')) || { nama: "Mahasiswa Teknik", jurusan: "Fokus: Elektronika Digital", lokasi: "Lampung", avatar: null };
+    let currentTab = 'beranda';
+    const hariIni = new Date().toLocaleDateString('id-ID', { weekday: 'long' });
+
+    // --- PROFIL ---
+    function initProfil() {
+        const imgSource = profilData.avatar ? profilData.avatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(profilData.nama)}&background=random&color=fff&bold=true`;
+        document.getElementById('header-avatar').src = imgSource; document.getElementById('profile-img-large').src = imgSource;
+        document.getElementById('p-nama').value = profilData.nama; document.getElementById('p-jurusan').value = profilData.jurusan; document.getElementById('p-lokasi').value = profilData.lokasi;
+        const jam = new Date().getHours(); let sapaanWaktu = "Malam"; if(jam < 11) sapaanWaktu = "Pagi"; else if(jam < 15) sapaanWaktu = "Siang"; else if(jam < 18) sapaanWaktu = "Sore";
+        document.getElementById('greeting').innerText = `Selamat ${sapaanWaktu}, ${profilData.nama}!`;
+        document.getElementById('date-display').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+    }
+    function gantiFotoProfil(event) {
+        const file = event.target.files[0];
+        if(file) { const reader = new FileReader(); reader.onload = function(e) { profilData.avatar = e.target.result; localStorage.setItem('cl_profil', JSON.stringify(profilData)); initProfil(); }; reader.readAsDataURL(file); }
+    }
+    function simpanProfil() {
+        profilData.nama = document.getElementById('p-nama').value || "Mahasiswa"; profilData.jurusan = document.getElementById('p-jurusan').value; profilData.lokasi = document.getElementById('p-lokasi').value;
+        localStorage.setItem('cl_profil', JSON.stringify(profilData)); initProfil(); alert("Profil berhasil diperbarui!");
+    }
+    function openProfil() { document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active')); switchTabUtama('profil', 'Profil Saya'); }
+
+    // --- NAVIGASI ---
+    function switchTab(tabId, title, btn) { document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active')); if(btn) btn.classList.add('active'); switchTabUtama(tabId, title); }
+    function switchTabUtama(tabId, title) {
+        currentTab = tabId; document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).classList.add('active'); document.getElementById('header-title').innerText = title;
+        const fab = document.getElementById('main-fab'); if(tabId === 'jadwal' || tabId === 'tugas') fab.classList.remove('hidden'); else fab.classList.add('hidden');
+        updateDashboard(); updateStatistikProfil();
+    }
+    function openFabMenu() { document.getElementById('modal-overlay').classList.add('active'); if(currentTab === 'tugas') document.getElementById('sheet-tugas').classList.add('active'); if(currentTab === 'jadwal') document.getElementById('sheet-jadwal').classList.add('active'); }
+    function closeModals() { document.getElementById('modal-overlay').classList.remove('active'); document.getElementById('sheet-tugas').classList.remove('active'); document.getElementById('sheet-jadwal').classList.remove('active'); }
+
+    // --- JADWAL ---
+    function simpanJadwal() {
+        const matkul = document.getElementById('j-matkul').value, hari = document.getElementById('j-hari').value, waktu = document.getElementById('j-waktu').value;
+        if(!matkul || !waktu) return; jadwalData.push({ matkul, hari, waktu }); localStorage.setItem('cl_jadwal', JSON.stringify(jadwalData));
+        document.getElementById('j-matkul').value = ''; closeModals(); renderJadwal(); updateDashboard();
+    }
+    function hapusJadwal(i) { jadwalData.splice(i, 1); localStorage.setItem('cl_jadwal', JSON.stringify(jadwalData)); renderJadwal(); updateDashboard(); }
+    function renderJadwal() {
+        const container = document.getElementById('list-jadwal'); container.innerHTML = '';
+        if(jadwalData.length === 0) { document.getElementById('empty-jadwal').style.display = 'block'; return; }
+        document.getElementById('empty-jadwal').style.display = 'none';
+        jadwalData.forEach((item, i) => { container.innerHTML += `<div class="card"><div class="card-content"><h4>${item.matkul}</h4><p><i class="fas fa-clock"></i> ${item.hari}, ${item.waktu}</p></div><button class="btn-icon" onclick="hapusJadwal(${i})"><i class="fas fa-trash"></i></button></div>`; });
+    }
+
+    // --- TUGAS DENGAN ALARM ---
+    function simpanTugas() {
+        const nama = document.getElementById('t-nama').value;
+        const deadline = document.getElementById('t-deadline').value;
+        const prioritas = document.getElementById('t-prioritas').value;
+        const reminderOffset = parseInt(document.getElementById('t-reminder').value);
+        
+        if(!nama || !deadline) return alert("Harap isi nama dan waktu tenggat tugas!");
+        
+        // Kalkulasi waktu alarm
+        const deadlineTime = new Date(deadline).getTime();
+        const reminderTime = deadlineTime - (reminderOffset * 60000); // offset dalam menit
+
+        tugasData.push({ id: Date.now(), nama, deadline, prioritas, selesai: false, reminderTime: reminderTime, notified: false });
+        localStorage.setItem('cl_tugas', JSON.stringify(tugasData)); 
+        
+        if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
+        
+        document.getElementById('t-nama').value = ''; closeModals(); renderTugas(); updateDashboard();
+    }
+    
+    function toggleTugas(id) { const idx = tugasData.findIndex(t => t.id === id); tugasData[idx].selesai = !tugasData[idx].selesai; localStorage.setItem('cl_tugas', JSON.stringify(tugasData)); renderTugas(); updateDashboard(); updateStatistikProfil(); }
+    function hapusTugas(id) { tugasData = tugasData.filter(t => t.id !== id); localStorage.setItem('cl_tugas', JSON.stringify(tugasData)); renderTugas(); updateDashboard(); updateStatistikProfil(); }
+    
+    function renderTugas() {
+        const container = document.getElementById('list-tugas'); container.innerHTML = '';
+        if(tugasData.length === 0) { document.getElementById('empty-tugas').style.display = 'block'; return; }
+        document.getElementById('empty-tugas').style.display = 'none';
+        const sortedData = [...tugasData].sort((a,b) => (a.selesai === b.selesai ? new Date(a.deadline) - new Date(b.deadline) : a.selesai ? 1 : -1));
+        
+        sortedData.forEach((item) => {
+            const dateObj = new Date(item.deadline);
+            // Format waktu menjadi: 02 Nov, 14:30
+            const dateStr = dateObj.toLocaleDateString('id-ID', {day:'numeric', month:'short'}) + ', ' + dateObj.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+            
+            const badge = item.prioritas === 'urgent' ? `<span class="badge badge-urgent">Mendesak</span>` : `<span class="badge badge-normal">Biasa</span>`;
+            const doneClass = item.selesai ? 'task-done' : '', checkIcon = item.selesai ? 'fa-check-circle' : 'fa-circle';
+            container.innerHTML += `<div class="card ${doneClass}"><div style="display:flex; align-items:center; flex:1;" onclick="toggleTugas(${item.id})"><i class="far ${checkIcon} btn-check"></i><div class="card-content"><h4>${item.nama}</h4><p><i class="far fa-calendar"></i> ${dateStr} &nbsp; ${badge}</p></div></div><button class="btn-icon" onclick="hapusTugas(${item.id})"><i class="fas fa-trash"></i></button></div>`;
+        });
+    }
+
+    // --- SISTEM PENGECEK ALARM TUGAS (Berjalan Tiap 10 Detik) ---
+    function periksaAlarmTugas() {
+        const now = Date.now();
+        let isDataChanged = false;
+
+        tugasData.forEach(task => {
+            if(!task.selesai && task.reminderTime && !task.notified && now >= task.reminderTime) {
+                // Mainkan suara
+                alarmSound.currentTime = 0;
+                alarmSound.play().catch(e => console.log("Audio play diizinkan otomatis jika ada interaksi sebelumnya."));
+                
+                // Tampilkan Notifikasi Sistem
+                if ("Notification" in window && Notification.permission === "granted") {
+                    new Notification("⏰ Pengingat Tugas!", { body: `Tugas "${task.nama}" sudah mendekati batas waktu!`, icon: './icons/icon-192.png' });
+                } else {
+                    alert(`⏰ PENGINGAT: Tugas "${task.nama}" sudah mendekati tenggat waktu!`);
+                }
+                
+                // Tandai sudah diingatkan agar tidak looping
+                task.notified = true;
+                isDataChanged = true;
+            }
+        });
+
+        if(isDataChanged) {
+            localStorage.setItem('cl_tugas', JSON.stringify(tugasData));
+        }
+    }
+    // Loop pengecekan background
+    setInterval(periksaAlarmTugas, 10000);
+
+    // --- DASHBOARD ---
+    function updateDashboard() {
+        document.getElementById('pending-tasks').innerText = tugasData.filter(t => !t.selesai).length;
+        document.getElementById('today-classes').innerText = jadwalData.filter(j => j.hari.toLowerCase() === hariIni.toLowerCase()).length;
+        const container = document.getElementById('recent-tasks'); container.innerHTML = '';
+        const recent = [...tugasData].filter(t => !t.selesai).sort((a,b) => new Date(a.deadline) - new Date(b.deadline)).slice(0,2);
+        if(recent.length === 0) container.innerHTML = '<p style="color:var(--text-muted); font-size:0.9rem;">Tidak ada tugas tertunda.</p>';
+        else recent.forEach(item => { const badge = item.prioritas === 'urgent' ? `<span class="badge badge-urgent">Mendesak</span>` : ''; container.innerHTML += `<div class="card" style="padding:12px; margin-bottom:8px;"><div class="card-content"><h4 style="font-size:0.95rem;">${item.nama} ${badge}</h4></div></div>`; });
+    }
+    
+    function updateStatistikProfil() {
+        document.getElementById('stat-tugas').innerText = tugasData.filter(t => t.selesai).length;
+        let totalSks = 0, totalNilai = 0; nilaiData.forEach(item => { totalSks += item.sks; totalNilai += (item.sks * item.bobot); });
+        document.getElementById('stat-ipk').innerText = totalSks > 0 ? (totalNilai / totalSks).toFixed(2) : "0.00";
+    }
+
+    // --- IPK & TIMER ---
+    function tambahNilai() {
+        const mk = document.getElementById('ipk-mk').value, sks = parseFloat(document.getElementById('ipk-sks').value), nilai = parseFloat(document.getElementById('ipk-nilai').value);
+        if(!mk || isNaN(sks)) return; nilaiData.push({ mk, sks, bobot: nilai }); localStorage.setItem('cl_nilai', JSON.stringify(nilaiData));
+        document.getElementById('ipk-mk').value = ''; document.getElementById('ipk-sks').value = ''; renderNilai(); updateStatistikProfil();
+    }
+    function hapusNilai(i) { nilaiData.splice(i, 1); localStorage.setItem('cl_nilai', JSON.stringify(nilaiData)); renderNilai(); updateStatistikProfil(); }
+    function renderNilai() {
+        const tbody = document.getElementById('list-nilai'); tbody.innerHTML = ''; let totalSks = 0, totalNilai = 0;
+        const letterMap = {4:"A", 3.5:"B+", 3:"B", 2.5:"C+", 2:"C", 1:"D", 0:"E"};
+        nilaiData.forEach((item, i) => { totalSks += item.sks; totalNilai += (item.sks * item.bobot); tbody.innerHTML += `<tr><td>${item.mk}</td><td>${item.sks}</td><td>${letterMap[item.bobot]}</td><td><button class="btn-icon" style="padding:0;" onclick="hapusNilai(${i})"><i class="fas fa-times"></i></button></td></tr>`; });
+        document.getElementById('ipk-result').innerText = `Total IPK: ${totalSks > 0 ? (totalNilai / totalSks).toFixed(2) : "0.00"} (${totalSks} SKS)`;
+    }
+
+    let timerInterv; let waktuTotal = 25 * 60; let waktuSisa = waktuTotal; let isJalan = false;
+    const circle = document.getElementById('timer-progress'); const circumference = circle.r.baseVal.value * 2 * Math.PI;
+
+    function changeTimerMode() {
+        clearInterval(timerInterv); isJalan = false; const btn = document.getElementById('btn-timer-toggle'); btn.innerText = "Mulai"; btn.className = "btn-timer btn-primary"; btn.style.background = "";
+        waktuTotal = parseInt(document.getElementById('timer-mode').value) * 60; waktuSisa = waktuTotal; updateTimerVisual();
+    }
+    function updateTimerVisual() {
+        document.getElementById('timer-display').innerText = `${Math.floor(waktuSisa / 60).toString().padStart(2, '0')}:${(waktuSisa % 60).toString().padStart(2, '0')}`;
+        circle.style.strokeDashoffset = circumference - (waktuSisa / waktuTotal) * circumference;
+    }
+    function toggleTimer() {
+        const btn = document.getElementById('btn-timer-toggle');
+        if(isJalan) { clearInterval(timerInterv); isJalan = false; btn.innerText = "Lanjut"; btn.className = "btn-timer btn-primary"; btn.style.background = "var(--success)"; }
+        else {
+            isJalan = true; btn.innerText = "Jeda"; btn.className = "btn-timer"; btn.style.background = "var(--warning)"; btn.style.color = "white";
+            timerInterv = setInterval(() => { if(waktuSisa > 0) { waktuSisa--; updateTimerVisual(); } else { clearInterval(timerInterv); isJalan = false; alert('Waktu Habis!'); changeTimerMode(); } }, 1000);
+        }
+    }
+    function resetTimer() { changeTimerMode(); }
+    function resetSemuaData() { if(confirm("Yakin ingin menghapus seluruh data secara permanen?")) { localStorage.clear(); location.reload(); } }
+
+    initProfil(); renderJadwal(); renderTugas(); renderNilai(); updateDashboard(); updateStatistikProfil(); updateTimerVisual();
+</script>
+<script>
+  // PWA: service worker lokal agar aplikasi dapat dibuka kembali secara offline.
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(err => console.warn('Service worker gagal:', err));
+    });
+  }
+</script>
+</body>
+</html>
